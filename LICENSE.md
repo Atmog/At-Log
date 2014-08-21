@@ -1,0 +1,1 @@
+You are free to use and modify the code, except for commercial use.

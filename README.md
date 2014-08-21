@@ -21,7 +21,14 @@ A tool is composed of several parts:
 - Message Type 
 - Application Name 
 - Application Version 
-- An IP address 
-- A pseudonym user 
+- An IP address
 - The message itself
+
+----------------------------------------------------------------------------
+
+In the Server directory, you will find the server application to handle logs
+
+----------------------------------------------------------------------------
+
+In the future, an application will be written to read logs easily
 

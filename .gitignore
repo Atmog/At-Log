@@ -29,3 +29,6 @@ obj/
 
 #doxygen
 doxygen/
+
+# Log
+*.log
