@@ -2,10 +2,9 @@
 #define LOG_HPP
 
 #include <string>
-#include <fstream>
+#include <sstream>
 #include <iostream>
-#include <SFML/Network/Packet.hpp>
-#include <SFML/Network/TcpSocket.hpp>
+#include <SFML/Network/Http.hpp>
 #include <SFML/Network/IpAddress.hpp>
 
 class Log
@@ -19,66 +18,61 @@ class Log
             Error,
         };
 
-        Log(std::string serverAddress, std::string appName, std::string appVersion);
-        ~Log();
+	static Log* getInstance();
 
-        static Log* getInstance();
+	friend Log& operator<<(Log& log, std::string message)
+	{
+	    sf::Http::Request request("/* here your uri */", sf::Http::Request::Post);
+	    std::ostringstream stream;
+	    stream << "action=insert";
 
-        bool isOpen() const;
-        bool isNetworked() const;
+	    if(log.mType == Type::Info)
+	        stream << "&type=info";
+	    else if(log.mType == Type::Warning)
+		stream << "&type=warning";
+	    else if(log.mType == Type::Error)
+		stream << "&type=error";
+	    else
+		stream << "&type=none";
 
-        static std::string getTime(std::string timeFormat);
-        static std::string getType(Log::Type type);
+	    if(log.mAppName != "")
+		stream << "&appname=" << log.mAppName;
 
-        friend Log& operator<<(Log& log, std::string message)
-        {
-            message = Log::getTime("%Y-%m-%d %X") + Log::getType(log.mType) + log.mAppName + " " + log.mAppVersion + " " + sf::IpAddress::getPublicAddress().toString() + " " + message;
+	    if(log.mAppVersion != "")
+		stream << "&appversion=" << log.mAppVersion;
 
-            if (log.isNetworked())
-            {
-                if (log.mServer.send(sf::Packet() << "Log" << message) != sf::Socket::Done)
-                {
-                    log.mIsNetworked = false;
-                    if (log.isOpen())
-                    {
-                        log.mFile << message << std::endl;
-                    }
-                    else
-                    {
-                        std::cout << message << std::endl;
-                    }
-                }
-                return log;
-            }
-            else if (log.isOpen())
-            {
-                log.mFile << message << std::endl;
-            }
-            else
-            {
-                std::cout << message << std::endl;
-            }
-            return log;
-        }
+	    stream << "&address=" << sf::IpAddress::getPublicAddress().toString();
 
-        friend Log& operator<<(Log& log, Type type)
-        {
-            log.mType = type;
-            return log;
-        }
+	    if(log.mUsername != "")
+		stream << "&username=" << log.mUsername;
+
+	    stream << "&content=" << message;
+
+	    request.setBody(stream.str());
+
+	    sf::Http http("/* her your url */");
+	    http.sendRequest(request);
+	    return log;
+	}
+
+	friend Log& operator<<(Log& log, Type type)
+	{
+	    log.mType = type;
+	    return log;
+	}
+
+        void setAppName(std::string appName);
+	void setAppVersion(std::string appVersion);
+	void setUsername(std::string username);
+
 
     private:
         static Log* mInstance;
 
+        Type mType;
         std::string mAppName;
         std::string mAppVersion;
-
-        sf::TcpSocket mServer;
-        std::ofstream mFile;
-
-        bool mIsNetworked;
-
-        Type mType;
+        std::string mUsername;
 };
 
 #endif // LOG_HPP
